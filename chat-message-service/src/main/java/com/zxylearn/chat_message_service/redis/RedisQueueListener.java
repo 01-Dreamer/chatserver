@@ -38,10 +38,11 @@ public class RedisQueueListener {
                 try {
                     Message message = objectMapper.readValue(jsonMsg, Message.class);
                     message.setCreateTime(new Date());
+                    System.out.println(message.toString());
+                    System.out.println(objectMapper.writeValueAsString(message));
                 } catch (Exception e) {
                     log.error("failed to parse message: {}", e.getMessage());
                 }
-
             } catch (Exception e) {
                 try {
                     Thread.sleep(5000);
