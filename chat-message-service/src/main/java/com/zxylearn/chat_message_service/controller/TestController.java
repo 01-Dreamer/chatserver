@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 
-
 @RestController
 public class TestController {
     @Autowired
@@ -25,12 +24,5 @@ public class TestController {
     public boolean unsubscribe(@PathVariable String channelName) {
         return redisService.unsubscribe(channelName);
     }
-
-    @GetMapping("/get/{key}")
-    public String getKey(@PathVariable String key) {
-        return redisService.get(key);
-    }
-    
-
 
 }

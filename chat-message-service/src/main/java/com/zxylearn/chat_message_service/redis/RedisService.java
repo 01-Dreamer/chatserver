@@ -8,7 +8,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 
 @Service
@@ -18,18 +17,10 @@ public class RedisService {
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
-    private RedisMessageListenerContainer redisContainer;
+    private RedisMessageListenerContainer redisMessageListenerContainer;
 
     @Autowired
-    private RedisMessageReceiver messageReceiver;
-
-    public boolean publish(String channel, String message) {
-        if (channel == null || message == null) {
-            return false;
-        }
-        stringRedisTemplate.convertAndSend(channel, message);
-        return true;
-    }
+    private RedisMessageSubscribe redisMessageSubscribe;
 
     public boolean set(String key, String value) {
         if (key == null || value == null) {
@@ -59,8 +50,7 @@ public class RedisService {
         return key == null ? false : stringRedisTemplate.delete(key);
     }
 
-    // 统一为rpush
-    public boolean push(String key, String value) {
+    public boolean rpush(String key, String value) {
         if (key == null || value == null) {
             return false;
         }
@@ -68,8 +58,7 @@ public class RedisService {
         return true;
     }
 
-    // 统一为lpop
-    public String pop(String key) {
+    public String lpop(String key) {
         return key == null ? null : stringRedisTemplate.opsForList().leftPop(key);
     }
 
@@ -79,7 +68,7 @@ public class RedisService {
             return false;
         }
         ChannelTopic topic = new ChannelTopic(channelName);
-        redisContainer.addMessageListener(messageReceiver, topic);
+        redisMessageListenerContainer.addMessageListener(redisMessageSubscribe, topic);
         return true;
     }
 
@@ -89,7 +78,16 @@ public class RedisService {
             return false;
         }
         ChannelTopic topic = new ChannelTopic(channelName);
-        redisContainer.removeMessageListener(messageReceiver, topic);
+        redisMessageListenerContainer.removeMessageListener(redisMessageSubscribe, topic);
+        return true;
+    }
+
+    // 发布消息
+    public boolean publish(String channel, String message) {
+        if (channel == null || message == null) {
+            return false;
+        }
+        stringRedisTemplate.convertAndSend(channel, message);
         return true;
     }
 
@@ -102,15 +100,15 @@ public class RedisService {
     }
 
     // 添加在线用户
-    public boolean addOnlineUser(String userId, String sessionId) {
-        if (userId == null || sessionId == null) {
+    public boolean addOnlineUser(String userId, String userInfo) {
+        if (userId == null || userInfo == null) {
             return false;
         }
         if(isUserOnline(userId)) {
             return false;
         }
-        set("online:" + userId, sessionId);
-        subscribe("message:" + userId);
+        set("online:" + userId, userInfo);
+        subscribe(userId);
         return true;
     }
 
@@ -120,7 +118,7 @@ public class RedisService {
             return false;
         }
         del("online:" + userId);
-        unsubscribe("message:" + userId);
+        unsubscribe(userId);
         return true;
     }
 }

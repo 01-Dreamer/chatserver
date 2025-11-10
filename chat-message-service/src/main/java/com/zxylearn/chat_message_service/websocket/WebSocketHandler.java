@@ -1,6 +1,8 @@
 package com.zxylearn.chat_message_service.websocket;
 
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,24 +27,20 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     private static final Map<String, WebSocketSession> UserId2Sesssion = new ConcurrentHashMap<>();
 
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String userId = (String) session.getAttributes().get("userId");
-        redisService.addOnlineUser(userId, session.getId());
         UserId2Sesssion.put(userId, session);
-        log.info("User {} connected.", userId);
+        redisService.addOnlineUser(userId, LocalDateTime.now().format(formatter));
+        log.info("User {} connected", userId);
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        String payload = message.getPayload();
-        
-        System.out.println("====================================");
-        System.out.println("【收到消息】: " + payload);
-        System.out.println("【来自】: " + session.getId());
-        System.out.println("====================================");
-
-        session.sendMessage(new TextMessage("服务器已收到你的消息: " + payload));
+        String msg = message.getPayload();
+        redisService.rpush("msg-process-queue", msg);
     }
 
     @Override
@@ -50,7 +48,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String userId = (String) session.getAttributes().get("userId");
         redisService.removeOnlineUser(userId);
         UserId2Sesssion.remove(userId);
-        log.info("User {} disconnected.", userId);
+        log.info("User {} disconnected", userId);
     }
 
     @Override
@@ -58,7 +56,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String userId = (String) session.getAttributes().get("userId");
         redisService.removeOnlineUser(userId);
         UserId2Sesssion.remove(userId);
-        log.info("User {} disconnected(error).", userId);
+        log.info("User {} disconnected(error)", userId);
     }
 
     public boolean sendMessageToUser(String userId, String message) throws Exception {
