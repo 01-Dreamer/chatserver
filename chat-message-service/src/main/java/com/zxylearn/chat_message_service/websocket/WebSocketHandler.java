@@ -1,38 +1,40 @@
 package com.zxylearn.chat_message_service.websocket;
 
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-/**
- * 简单的 WebSocket 处理器
- * 1. 必须是 Spring Bean (@Component)
- * 2. 继承 TextWebSocketHandler 来处理纯文本消息
- */
+import com.zxylearn.chat_message_service.redis.RedisService;
+
+import lombok.extern.slf4j.Slf4j;
+
+
+@Slf4j
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    /**
-     * 当 WebSocket 连接成功建立后，调用此方法
-     */
+    @Autowired
+    private RedisService redisService;
+
+    private static final Map<String, WebSocketSession> UserId2Sesssion = new ConcurrentHashMap<>();
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // session.getId() 是 Spring 自动分配的唯一 ID
-        System.out.println("====================================");
-        System.out.println("【新连接】: " + session.getId());
-        System.out.println("【连接 IP】: " + session.getRemoteAddress());
-        System.out.println("====================================");
+        String userId = (String) session.getAttributes().get("userId");
+        redisService.addOnlineUser(userId, session.getId());
+        UserId2Sesssion.put(userId, session);
+        log.info("User {} connected.", userId);
     }
 
-    /**
-     * 当收到一个文本消息时，调用此方法
-     */
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        // message.getPayload() 就是客户端发来的原始字符串
         String payload = message.getPayload();
         
         System.out.println("====================================");
@@ -40,26 +42,31 @@ public class WebSocketHandler extends TextWebSocketHandler {
         System.out.println("【来自】: " + session.getId());
         System.out.println("====================================");
 
-        // (可选) 自动回复一条消息给客户端
         session.sendMessage(new TextMessage("服务器已收到你的消息: " + payload));
     }
 
-    /**
-     * 当 WebSocket 连接关闭后，调用此方法
-     */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        System.out.println("====================================");
-        System.out.println("【连接关闭】: " + session.getId());
-        System.out.println("【关闭状态】: " + status);
-        System.out.println("====================================");
+        String userId = (String) session.getAttributes().get("userId");
+        redisService.removeOnlineUser(userId);
+        UserId2Sesssion.remove(userId);
+        log.info("User {} disconnected.", userId);
     }
 
-    /**
-     * 当传输发生错误时，调用此方法
-     */
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        System.err.println("【连接出错】: " + session.getId() + "，异常: " + exception.getMessage());
+        String userId = (String) session.getAttributes().get("userId");
+        redisService.removeOnlineUser(userId);
+        UserId2Sesssion.remove(userId);
+        log.info("User {} disconnected(error).", userId);
+    }
+
+    public boolean sendMessageToUser(String userId, String message) throws Exception {
+        WebSocketSession session = UserId2Sesssion.get(userId);
+        if (session != null && session.isOpen()) {
+            session.sendMessage(new TextMessage(message));
+            return true;
+        }
+        return false;
     }
 }
