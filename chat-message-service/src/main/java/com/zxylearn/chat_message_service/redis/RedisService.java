@@ -1,6 +1,7 @@
 package com.zxylearn.chat_message_service.redis;
 
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,14 @@ public class RedisService {
         return key == null ? null : stringRedisTemplate.opsForList().leftPop(key);
     }
 
+    public Boolean updateExpire(String key, long timeout) {
+        if (key == null) {
+            return false;
+        }
+        stringRedisTemplate.expire(key, timeout, TimeUnit.SECONDS);
+        return true;
+    }
+
     // 添加订阅
     public boolean subscribe(String channelName) {
         if(channelName == null) {
@@ -120,5 +129,37 @@ public class RedisService {
         del("online:" + userId);
         unsubscribe(userId);
         return true;
+    }
+    
+    // 添加session:members缓存
+    public boolean addSessionMembers(String sessionId, List<Long> userIds) {
+        if (sessionId == null || userIds == null || userIds.isEmpty()) {
+            return false;
+        }
+        String key = "session:members:" + sessionId;
+        String[] members = userIds.stream()
+                                  .map(String::valueOf)
+                                  .toArray(String[]::new);
+        stringRedisTemplate.opsForSet().add(key, members);
+        updateExpire(key, 3600);
+        return true;
+    }
+
+    // 获取session:members缓存
+    public List<String> getSessionMembers(String sessionId) {
+        if (sessionId == null) {
+            return null;
+        }
+        String key = "session:members:" + sessionId;
+        return stringRedisTemplate.opsForSet().members(key).stream().toList();
+    }
+
+    // user是否在session中
+    public boolean isUserInSession(String userId, String sessionId) {
+        if (userId == null || sessionId == null) {
+            return false;
+        }
+        String key = "session:members:" + sessionId;
+        return stringRedisTemplate.opsForSet().isMember(key, String.valueOf(userId));
     }
 }

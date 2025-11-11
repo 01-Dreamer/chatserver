@@ -8,9 +8,12 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zxylearn.chat_message_service.pojo.entity.Message;
+import com.zxylearn.chat_message_service.service.SessionMemberService;
 
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -21,6 +24,9 @@ public class RedisQueueListener {
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private SessionMemberService sessionMemberService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -51,5 +57,19 @@ public class RedisQueueListener {
                 }
             }
         }
+    }
+
+    private boolean isUserInSession(String userId, String sessionId) {
+        String key = "session:" + sessionId + ":members";
+
+        // 缓存命中
+        if(redisService.exist(key)) {
+            return redisService.isUserInSession(userId, sessionId);
+        }
+
+        // 缓存未命中，查询数据库, 并更新缓存
+        List<Long> userIds = sessionMemberService.getUserIdsBySessionId(Long.parseLong(sessionId));
+        redisService.addSessionMembers(sessionId, userIds);
+        return redisService.isUserInSession(userId, sessionId);
     }
 }

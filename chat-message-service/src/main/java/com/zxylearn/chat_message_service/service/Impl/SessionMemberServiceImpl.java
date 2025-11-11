@@ -13,7 +13,7 @@ import com.zxylearn.chat_message_service.service.SessionMemberService;
 @Service
 public class SessionMemberServiceImpl extends ServiceImpl<SessionMemberMapper, SessionMember> implements SessionMemberService {
     @Override
-    public boolean userInSession(Long userId, Long sessionId) {
+    public boolean isUserInSession(Long userId, Long sessionId) {
         if(userId == null || sessionId == null) {
             return false;
         }
