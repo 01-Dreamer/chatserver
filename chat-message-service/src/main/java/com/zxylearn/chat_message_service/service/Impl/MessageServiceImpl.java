@@ -12,10 +12,18 @@ import com.zxylearn.chat_message_service.service.MessageService;
 public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> implements MessageService {
     @Override
     @Async
-    public void saveMessage(Message message) {
+    public void saveMessageAsync(Message message) {
         if(message == null) {
             return;
         }
         baseMapper.insert(message);
+    }
+
+    @Override
+    public Message getMessageByMessageId(Long messageId) {
+        if(messageId == null) {
+            return null;
+        }
+        return baseMapper.selectById(messageId);
     }
 }

@@ -76,7 +76,7 @@ public class RedisQueueListener {
                     }
 
                     // 异步保存消息
-                    messageService.saveMessage(message);
+                    messageService.saveMessageAsync(message);
                 } catch (Exception e) {
                     log.error("failed to parse message: {}", e.getMessage());
                 }

@@ -147,7 +147,9 @@ public class RedisService {
             return null;
         }
         String key = "unread_message:" + userId;
-        return stringRedisTemplate.opsForSet().members(key).stream().toList();
+        List<String> messageIds = stringRedisTemplate.opsForSet().members(key).stream().toList();
+        del(key); // 删除未读消息
+        return messageIds;
     }
     
     // 添加session:members缓存
