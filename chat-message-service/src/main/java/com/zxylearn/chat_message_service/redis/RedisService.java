@@ -130,6 +130,25 @@ public class RedisService {
         unsubscribe(userId);
         return true;
     }
+
+    // 添加未读消息
+    public boolean addUnreadMessage(String userId, String messageId) {
+        if(userId == null || messageId == null) {
+            return false;
+        }
+        String key = "unread_message:" + userId;
+        stringRedisTemplate.opsForSet().add(key, messageId);
+        return true;
+    }
+
+    // 获取未读消息
+    public List<String> getUnreadMessageIds(String userId) {
+        if(userId == null) {
+            return null;
+        }
+        String key = "unread_message:" + userId;
+        return stringRedisTemplate.opsForSet().members(key).stream().toList();
+    }
     
     // 添加session:members缓存
     public boolean addSessionMembers(String sessionId, List<Long> userIds) {
@@ -146,7 +165,7 @@ public class RedisService {
     }
 
     // 获取session:members缓存
-    public List<String> getSessionMembers(String sessionId) {
+    public List<String> getUserIdsBySessionId(String sessionId) {
         if (sessionId == null) {
             return null;
         }

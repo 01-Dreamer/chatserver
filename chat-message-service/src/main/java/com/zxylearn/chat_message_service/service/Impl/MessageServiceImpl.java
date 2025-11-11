@@ -1,5 +1,6 @@
 package com.zxylearn.chat_message_service.service.Impl;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,10 +11,11 @@ import com.zxylearn.chat_message_service.service.MessageService;
 @Service
 public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> implements MessageService {
     @Override
-    public boolean saveMessage(Message message) {
+    @Async
+    public void saveMessage(Message message) {
         if(message == null) {
-            return false;
+            return;
         }
-        return baseMapper.insert(message) > 0;
+        baseMapper.insert(message);
     }
 }
