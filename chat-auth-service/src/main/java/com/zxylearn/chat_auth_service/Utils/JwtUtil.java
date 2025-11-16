@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
-import com.zxylearn.chat_auth_service.pojo.entity.User;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -17,13 +16,12 @@ public class JwtUtil {
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     private static final long EXPIRATION = 7 * 24 * 60 * 60 * 1000L; // 7天
 
-    public static String createToken(User user) {
+    public static String createToken(String userId) {
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + EXPIRATION);
         return Jwts.builder()
                 .setId(UUID.randomUUID().toString())
-                .setSubject(user.getId().toString())
-                .claim("username", user.getUsername())
+                .setSubject(userId)
                 .setIssuedAt(now)
                 .setExpiration(expirationDate)
                 .signWith(SECRET_KEY)

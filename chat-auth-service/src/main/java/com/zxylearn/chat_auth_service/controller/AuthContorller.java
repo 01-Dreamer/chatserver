@@ -30,7 +30,7 @@ public class AuthContorller {
         User user = userService.getUserByUsername(request.getUsername());
         if(user != null && PasswordUtil.match(request.getPassword(), user.getPasswordHash())) {
             response.setUserId(user.getId());
-            response.setToken(JwtUtil.createToken(user));
+            response.setToken(JwtUtil.createToken(user.getId().toString()));
         }
         return response;
     }
