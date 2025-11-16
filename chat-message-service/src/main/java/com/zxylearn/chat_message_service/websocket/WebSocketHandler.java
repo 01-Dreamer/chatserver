@@ -1,6 +1,5 @@
 package com.zxylearn.chat_message_service.websocket;
 
-import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -19,7 +18,6 @@ import com.zxylearn.chat_message_service.redis.RedisService;
 import com.zxylearn.chat_message_service.service.MessageService;
 import com.zxylearn.chat_message_service.pojo.entity.Message;
 
-import io.netty.util.internal.UnstableApi;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -59,8 +57,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        String userId = (String) session.getAttributes().get("userId");
         String msg = message.getPayload();
-        redisService.rpush("msg-process-queue", msg);
+        redisService.pushMessageToProcessQueue(msg, userId);
     }
 
     @Override

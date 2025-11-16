@@ -2,9 +2,8 @@ package com.zxylearn.chat_message_service.redis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zxylearn.chat_message_service.hutool.IdGeneratorService;
@@ -14,14 +13,10 @@ import com.zxylearn.chat_message_service.service.SessionMemberService;
 
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-@Service
+@Component
 @Slf4j
 public class RedisQueueListener {
-
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     private RedisService redisService;
@@ -38,30 +33,51 @@ public class RedisQueueListener {
     @Autowired
     private MessageService messageService;
 
-    private static final String MSG_PROCESS_QUEUE = "msg-process-queue";
+    private static final List<String> SUPPORTED_MESSAGE_TYPES = List.of("text", "image", "file", "red_packet");
 
     @Async
     public void msgProcessListening() {
         while (true) {
             try {
-                String jsonMsg = stringRedisTemplate.opsForList().leftPop(MSG_PROCESS_QUEUE, 0, TimeUnit.SECONDS);
-                if(jsonMsg == null) {
+                String msgFromRedis = redisService.popMessageFromProcessQueue();
+                if(msgFromRedis == null) {
                     continue;
                 }
+
+                int sepPos = msgFromRedis.lastIndexOf("@");
+                String jsonMsg = msgFromRedis.substring(0, sepPos);
+                String senderIdFromWS = msgFromRedis.substring(sepPos + 1);
                 try {
                     Message message = objectMapper.readValue(jsonMsg, Message.class);
                     String senderId = message.getSenderId().toString();
                     String sessionId = message.getSessionId().toString();
+
+                    // 判断senderId是否和WebSocket传过来的一致
+                    if(!senderIdFromWS.equals(senderId)) {
+                        continue;
+                    }
 
                     // 判断用户是否属于该Session
                     if(!isUserInSession(senderId, sessionId)) {
                         continue;
                     }
 
-                    // 消息处理
-                    // TODO [后续需要特殊判断文件、图片、红包消息]
+                    // 判断消息类型是否支持
+                    if(!SUPPORTED_MESSAGE_TYPES.contains(message.getType())) {
+                        continue;
+                    }
+
+                    // 消息处理[需要特殊处理红包信息]
                     message.setId(idGeneratorService.getId());
                     message.setCreateTime(new Date());
+                    if(message.getType().equals("red_packet")) {
+                        String amount = message.getContent();
+                        if(amount == null || Long.parseLong(amount) <= 0) {
+                            continue;
+                        }
+                        // TODO 还需处理扣钱逻辑
+                        redisService.addRedPacket(message.getId().toString(), sessionId, senderId, amount);
+                    }
 
                     // 推送消息
                     String processedMessage = objectMapper.writeValueAsString(message);

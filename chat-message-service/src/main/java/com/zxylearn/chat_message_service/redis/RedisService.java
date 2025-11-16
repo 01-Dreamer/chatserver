@@ -183,4 +183,27 @@ public class RedisService {
         String key = "session:members:" + sessionId;
         return stringRedisTemplate.opsForSet().isMember(key, String.valueOf(userId));
     }
+
+    // 将收到的消息放入消息处理队列
+    public boolean pushMessageToProcessQueue(String message, String userId) {
+        if (message == null || userId == null) {
+            return false;
+        }
+        return rpush("msg_process_queue", message + "@" + userId);
+    }
+
+    // 从消息处理队列中弹出消息
+    public String popMessageFromProcessQueue() {
+        return stringRedisTemplate.opsForList().leftPop("msg_process_queue", 0, TimeUnit.SECONDS);
+    }
+
+    // 添加红包信息
+    public boolean addRedPacket(String messageId, String sessionId, String senderId, String amount) {
+        if(messageId == null || amount == null) {
+            return false;
+        }
+
+        String key = "red_packet:" + messageId + ":" + sessionId + ":" + senderId;
+        return set(key, amount, 86400); // 保存24小时
+    }
 }
