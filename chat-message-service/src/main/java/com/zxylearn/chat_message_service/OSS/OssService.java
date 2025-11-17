@@ -12,11 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.io.InputStream;
-
-import javax.imageio.ImageIO;
 
 
 @Slf4j

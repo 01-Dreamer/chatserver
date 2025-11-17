@@ -67,17 +67,9 @@ public class RedisQueueListener {
                         continue;
                     }
 
-                    // 消息处理[需要特殊处理红包信息]
+                    // 消息处理
                     message.setId(idGeneratorService.getId());
                     message.setCreateTime(new Date());
-                    if(message.getType().equals("red_packet")) {
-                        String amount = message.getContent();
-                        if(amount == null || Long.parseLong(amount) <= 0) {
-                            continue;
-                        }
-                        // TODO 还需处理扣钱逻辑
-                        redisService.addRedPacket(message.getId().toString(), sessionId, senderId, amount);
-                    }
 
                     // 推送消息
                     String processedMessage = objectMapper.writeValueAsString(message);
