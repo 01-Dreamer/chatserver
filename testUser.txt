@@ -1,0 +1,19 @@
+{
+    "userId": 1,
+    "token": "JWT_TOKEN_PLACEHOLDER"
+}
+
+{
+    "userId": 2,
+    "token": "JWT_TOKEN_PLACEHOLDER"
+}
+
+{
+    "userId": 3,
+    "token": "JWT_TOKEN_PLACEHOLDER"
+}
+
+{
+    "userId": 4,
+    "token": "JWT_TOKEN_PLACEHOLDER"
+}

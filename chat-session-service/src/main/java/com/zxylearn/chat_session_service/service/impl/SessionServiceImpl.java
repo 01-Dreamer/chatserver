@@ -11,6 +11,11 @@ import com.zxylearn.chat_session_service.service.SessionService;
 @Service
 public class SessionServiceImpl extends ServiceImpl<SessionMapper, Session> implements SessionService {
     @Override
+    public Session getSession(Long sessionId) {
+        return baseMapper.selectById(sessionId);
+    }
+
+    @Override
     public boolean areFriends(Long userId1, Long userId2) {
         QueryWrapper<Session> queryWrapper = new QueryWrapper<>();
         queryWrapper.nested(qw -> qw

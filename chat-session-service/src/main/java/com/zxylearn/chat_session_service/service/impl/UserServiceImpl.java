@@ -19,9 +19,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User getUser(Long userId) {
-        if(userId == null) {
-            return null;
-        }
         return baseMapper.selectById(userId);
     }
 }

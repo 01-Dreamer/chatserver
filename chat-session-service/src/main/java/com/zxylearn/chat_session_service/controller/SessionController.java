@@ -64,6 +64,10 @@ public class SessionController {
             return false;
         }
 
+        if(userId.equals(friendId)) {
+            return false;
+        }
+
         // 判断用户是否存在
         if (!userService.isUserExist(friendId)) {
             return false;
@@ -78,13 +82,17 @@ public class SessionController {
         redisService.addFriendApplication(userId.toString(), friendId.toString());
 
         // 向被申请者发送消息
+        Map<String, String> content = new HashMap();
+        content.put("applicantId", userId.toString());
+        String processedContent = objectMapper.writeValueAsString(content);
+
         Message message = new Message();
         message.setId(idGeneratorService.getId());
         message.setSessionId(-1L);
         message.setSenderId(-1L);
         message.setType("friend_application");
         message.setCreateTime(new Date());
-        message.setContent(userId.toString());
+        message.setContent(processedContent);
         messageService.save(message);
         String processedMessage = objectMapper.writeValueAsString(message);
         if (redisService.isUserOnline(friendId.toString())) {
@@ -142,6 +150,10 @@ public class SessionController {
         // 删除好友申请缓存
         redisService.delFriendApplication(applicantId.toString(), userId.toString());
 
+        // 更新会话缓存
+        redisService.updateSessionMembers(session.getId().toString(), applicantId.toString(), true);
+        redisService.updateSessionMembers(session.getId().toString(), userId.toString(), true);
+
         // 向申请者和被申请者发送好友通过消息
         Map<String, String> content = new HashMap();
         content.put("sessionId", session.getId().toString());
@@ -177,10 +189,42 @@ public class SessionController {
     }
 
     ////////////////////////////////////////
+    // 创建群聊
+    ////////////////////////////////////////
+    @PostMapping("createGroupSession")
+    public Long createGroupSession(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("name") String name) throws Exception {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return null;
+        }
+
+        // 创建群聊
+        Session session = new Session();
+        session.setCreaterId(userId);
+        session.setPeerId(-1L);
+        if (!sessionService.addSession(session)) {
+            return null;
+        }
+
+        // 将用户加入群聊
+        SessionMember sessionMember = new SessionMember();
+        sessionMember.setSessionId(session.getId());
+        sessionMember.setUserId(session.getCreaterId());
+        sessionMember.setRemark(null);
+        sessionMemberService.addSessionMember(sessionMember);
+
+        return session.getId();
+    }
+
+    ////////////////////////////////////////
     // 申请加入群聊
     ////////////////////////////////////////
-    @PostMapping("applyJoinSession")
-    public boolean applyJoinSession(
+    @PostMapping("applyJoinGroup")
+    public boolean applyJoinGroup(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam("sessionId") Long sessionId) throws Exception {
 
@@ -190,6 +234,42 @@ public class SessionController {
             return false;
         }
 
+        // 检查群聊是否存在
+        Session session = sessionService.getSession(sessionId);
+        if (session == null || !session.getPeerId().equals(-1L)) {
+            return false;
+        }
+        Long createrId = session.getCreaterId();
+
+        // 检查用户是否已经是群成员
+        if(sessionMemberService.isUserInSession(userId, sessionId)) {
+            return false;
+        }
+
+        // 添加加入群聊申请缓存
+        redisService.addGroupApplication(userId.toString(), sessionId.toString(), createrId.toString());
+
+        // 向群主发送消息
+        Map<String, String> content = new HashMap();
+        content.put("applicantId", userId.toString());
+        content.put("sessionId", sessionId.toString());
+        String processedContent = objectMapper.writeValueAsString(content);
+
+        Message message = new Message();
+        message.setId(idGeneratorService.getId());
+        message.setSessionId(-1L);
+        message.setSenderId(-1L);
+        message.setType("group_application");
+        message.setCreateTime(new Date());
+        message.setContent(processedContent);
+        messageService.save(message);
+        String processedMessage = objectMapper.writeValueAsString(message);
+        if(redisService.isUserOnline(createrId.toString())) {
+            redisService.publish(createrId.toString(), processedMessage);
+        } else {
+            redisService.addUnreadMessage(createrId.toString(), message.getId().toString());
+        }
+
         return true;
     }
 
@@ -197,7 +277,7 @@ public class SessionController {
     // 同意加入群聊
     ////////////////////////////////////////
     @PostMapping("acceptJoinGroup")
-    public boolean acceptJoinSession(
+    public boolean acceptJoinGroup(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam("sessionId") Long sessionId,
             @RequestParam("applicantId") Long applicantId) throws Exception {
@@ -208,6 +288,46 @@ public class SessionController {
             return false;
         }
 
+        // 判断接受是否合法
+        if (!redisService.isGroupApplication(applicantId.toString(), sessionId.toString(), userId.toString())) {
+            return false;
+        }
+
+        // 将用户加入群聊
+        SessionMember sessionMember = new SessionMember();
+        sessionMember.setSessionId(sessionId);
+        sessionMember.setUserId(applicantId);
+        sessionMember.setRemark(null);
+        sessionMemberService.addSessionMember(sessionMember);
+
+        // 删除加入群聊申请缓存
+        redisService.delGroupApplication(applicantId.toString(), sessionId.toString(), userId.toString());
+
+        // 更新会话缓存
+        redisService.updateSessionMembers(sessionId.toString(), applicantId.toString(), true);
+
+        // 向申请者发送群聊通过消息
+        Session session = sessionService.getSession(sessionId);
+        Map<String, String> content = new HashMap();
+        content.put("sessionId", sessionId.toString());
+        content.put("sessionName", session.getName());
+        content.put("sessionAvatar", session.getAvatar());
+        String processedContent = objectMapper.writeValueAsString(content);
+
+        Message message = new Message();
+        message.setId(idGeneratorService.getId());
+        message.setSessionId(-1L);
+        message.setSenderId(-1L);
+        message.setType("group_acceptance");
+        message.setCreateTime(new Date());
+        message.setContent(processedContent);
+        messageService.save(message);
+        String processedMessage = objectMapper.writeValueAsString(message);
+        if (redisService.isUserOnline(applicantId.toString())) {
+            redisService.publish(applicantId.toString(), processedMessage);
+        } else {
+            redisService.addUnreadMessage(applicantId.toString(), message.getId().toString());
+        }
 
         return true;
     }

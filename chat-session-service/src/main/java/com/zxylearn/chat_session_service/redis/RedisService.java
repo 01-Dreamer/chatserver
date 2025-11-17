@@ -2,7 +2,6 @@ package com.zxylearn.chat_session_service.redis;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,5 +143,23 @@ public class RedisService {
         }
         String key = "group_applicant:" + applicantId + ":" + sessionId + ":" + createrId;
         return set(key, LocalDateTime.now().format(formatterOfTime), 604800); // 缓存24h
+    }
+
+    // 检查群聊申请缓存
+    public boolean isGroupApplication(String applicantId, String sessionId, String createrId) {
+        if(applicantId == null || sessionId == null || createrId == null) {
+            return false;
+        }
+        String key = "group_applicant:" + applicantId + ":" + sessionId + ":" + createrId;
+        return exist(key);
+    }
+
+    // 删除群聊申请缓存
+    public boolean delGroupApplication(String applicantId, String sessionId, String createrId) {
+        if(applicantId == null || sessionId == null || createrId == null) {
+            return false;
+        }
+        String key = "group_applicant:" + applicantId + ":" + sessionId + ":" + createrId;
+        return del(key);
     }
 }
