@@ -9,6 +9,7 @@ import com.zxylearn.chat_auth_service.pojo.DTO.UserLoginResponseDTO;
 import com.zxylearn.chat_auth_service.pojo.DTO.UserRegisterRequestDTO;
 import com.zxylearn.chat_auth_service.pojo.DTO.UserRegisterResponseDTO;
 import com.zxylearn.chat_auth_service.pojo.entity.User;
+import com.zxylearn.chat_auth_service.redis.RedisService;
 import com.zxylearn.chat_auth_service.service.UserService;
 
 import jakarta.validation.Valid;
@@ -16,6 +17,10 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 
 @RestController
@@ -23,6 +28,9 @@ public class AuthContorller {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RedisService redisService;
 
     @PostMapping("/login")
     public UserLoginResponseDTO login(@Valid @RequestBody UserLoginRequestDTO request) {
@@ -49,4 +57,21 @@ public class AuthContorller {
         return response;
     }
 
+    @PostMapping("setUserInfo")
+    public boolean setUserInfo(
+        @RequestHeader("Authorization") String authorizationHeader,
+        @RequestParam("uuid") String uuid) {
+        
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return false;
+        }
+        return redisService.addUserInfoForApp(uuid, userId.toString());
+    }
+
+    @GetMapping("getUserInfo")
+    public String getUserInfo(@RequestParam("uuid") String uuid) {
+        return redisService.getandDeleteUserInfoForApp(uuid);
+    }
 }

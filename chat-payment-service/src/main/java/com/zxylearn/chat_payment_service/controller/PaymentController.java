@@ -128,6 +128,11 @@ public class PaymentController {
         @RequestParam("userId") Long userId,
         @RequestParam("redPacketId") String redPacketId) throws Exception {
 
+        String key = "red_packet:" + redPacketId;
+        if(!redisService.exist(key)) {
+            return false;
+        }
+
         // 判断用户是否存在
         if(!userService.isUserExists(userId)) {
             return false;
