@@ -10,22 +10,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@TableName("session_application")
-public class SessionApplication {
+@AllArgsConstructor
+@TableName("user")
+public class User {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @TableField("creater_id")
-    private Long createrId;
+    @TableField(value = "username")
+    private String username;
 
-    @TableField("is_group")
-    boolean isGroup;
+    @TableField(value = "password_hash")
+    private String passwordHash;
 
-    @TableField("name")
-    String name;
+    @TableField(value = "nickname")
+    private String nickname;
 
-    @TableField("avatar")
-    String avatar;
+    @TableField(value = "avatar")
+    private String avatar;
+
+    @TableField(value = "wallet_balance")
+    private Long walletBalance;
 }

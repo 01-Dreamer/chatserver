@@ -17,9 +17,15 @@ public class Session {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @TableField("session_id")
-    private Long sessionId;
+    @TableField("creater_id")
+    private Long createrId;
 
-    @TableField("user_id")
-    private Long userId;
+    @TableField("peer_id")
+    private boolean peerId; // -1代表是群聊
+
+    @TableField("name")
+    private String name;
+
+    @TableField("avatar")
+    private String avatar;
 }
