@@ -29,6 +29,6 @@ public class User {
     @TableField(value = "avatar")
     private String avatar;
 
-    @TableField(value = "wallet_balance")
-    private Long walletBalance;
+    @TableField(value = "balance")
+    private Long balance;
 }

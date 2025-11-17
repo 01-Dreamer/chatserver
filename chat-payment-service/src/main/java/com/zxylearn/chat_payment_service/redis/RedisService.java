@@ -1,7 +1,5 @@
 package com.zxylearn.chat_payment_service.redis;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +12,6 @@ public class RedisService {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
-
-    private DateTimeFormatter formatterOfTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public boolean set(String key, String value) {
         if (key == null || value == null) {
@@ -90,5 +86,34 @@ public class RedisService {
         String key = "unread_message:" + userId;
         stringRedisTemplate.opsForSet().add(key, messageId);
         return true;
+    }
+
+    // 设置红包缓存
+    public boolean setRedPacket(String redPacketId, String userId, String amount) {
+        if(redPacketId == null || amount == null) {
+            return false;
+        }
+        String key1 = "red_packet:" + redPacketId;
+        String key2 = "red_packet_owner:" + redPacketId;
+
+        if(exist(key1)) {
+            return false;
+        }
+
+        set(key1, userId + ":" + amount, 86400);
+        set(key2, userId + ":" + amount, 90000);
+        return true;
+    }
+
+    // 获取红包缓存并删除
+    public String getAndDeleteRedPacket(String redPacketId) {
+        if(redPacketId == null) {
+            return null;
+        }
+        String key1 = "red_packet:" + redPacketId;
+        String key2 = "red_packet_owner:" + redPacketId;
+        String value = stringRedisTemplate.opsForValue().getAndDelete(key1);
+        del(key2);
+        return value;
     }
 }
