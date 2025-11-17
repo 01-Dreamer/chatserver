@@ -21,7 +21,7 @@ public class Session {
     private Long createrId;
 
     @TableField("peer_id")
-    private boolean peerId; // -1代表是群聊
+    private Long peerId; // -1代表是群聊
 
     @TableField("name")
     private String name;

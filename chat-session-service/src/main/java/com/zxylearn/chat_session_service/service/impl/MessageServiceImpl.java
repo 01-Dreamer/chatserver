@@ -9,5 +9,12 @@ import com.zxylearn.chat_session_service.service.MessageService;
 
 @Service
 public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> implements MessageService {
+    @Override
+    public boolean save(Message message) {
+        if(message == null) {
+            return false;
+        }
+        return baseMapper.insert(message) > 0;
+    }
 
 }

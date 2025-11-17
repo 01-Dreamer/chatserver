@@ -16,4 +16,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.eq("id", userId); 
         return baseMapper.exists(queryWrapper);
     }
+
+    @Override
+    public User getUser(Long userId) {
+        if(userId == null) {
+            return null;
+        }
+        return baseMapper.selectById(userId);
+    }
 }

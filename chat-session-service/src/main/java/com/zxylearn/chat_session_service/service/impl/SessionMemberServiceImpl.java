@@ -9,5 +9,11 @@ import com.zxylearn.chat_session_service.service.SessionMemberService;
 
 @Service
 public class SessionMemberServiceImpl extends ServiceImpl<SessionMemberMapper, SessionMember> implements SessionMemberService {
-    
+    @Override
+    public boolean addSessionMember(SessionMember sessionMember) {
+        if(sessionMember == null) {
+            return false;
+        }
+        return baseMapper.insert(sessionMember) > 0;
+    }
 }

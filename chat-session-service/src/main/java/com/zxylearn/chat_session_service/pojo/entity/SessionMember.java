@@ -26,7 +26,4 @@ public class SessionMember {
 
     @TableField("remark")
     private String remark;
-
-    @TableField("role")
-    private String role;
 }

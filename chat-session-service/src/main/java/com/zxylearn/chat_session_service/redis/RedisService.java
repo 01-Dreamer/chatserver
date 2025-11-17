@@ -1,5 +1,7 @@
 package com.zxylearn.chat_session_service.redis;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -13,6 +15,8 @@ public class RedisService {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    private DateTimeFormatter formatterOfTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public boolean set(String key, String value) {
         if (key == null || value == null) {
@@ -70,18 +74,22 @@ public class RedisService {
         stringRedisTemplate.convertAndSend(channel, message);
         return true;
     }
-    
-    // 添加session:members缓存
-    public boolean addSessionMembers(String sessionId, List<Long> userIds) {
-        if (sessionId == null || userIds == null || userIds.isEmpty()) {
+
+    // 用户在线状态
+    public boolean isUserOnline(String userId) {
+        if (userId == null) {
             return false;
         }
-        String key = "session:members:" + sessionId;
-        String[] members = userIds.stream()
-                                  .map(String::valueOf)
-                                  .toArray(String[]::new);
-        stringRedisTemplate.opsForSet().add(key, members);
-        updateExpire(key, 3600);
+        return get("online:" + userId) != null;
+    }
+
+    // 添加未读消息
+    public boolean addUnreadMessage(String userId, String messageId) {
+        if(userId == null || messageId == null) {
+            return false;
+        }
+        String key = "unread_message:" + userId;
+        stringRedisTemplate.opsForSet().add(key, messageId);
         return true;
     }
 
@@ -104,4 +112,37 @@ public class RedisService {
         return true;
     }
 
+    // 申请添加好友缓存
+    public boolean addFriendApplication(String applicantId, String requesterId) {
+        if(applicantId == null || requesterId == null) {
+            return false;
+        }
+        String key = "friend_application:" + applicantId + ":" + requesterId;
+        return set(key, LocalDateTime.now().format(formatterOfTime), 604800); // 缓存24h
+    }
+
+    // 检查好友申请缓存
+    public boolean isFriendApplication(String applicantId, String requesterId) {
+        String key = "friend_application:" + applicantId + ":" + requesterId;
+        return exist(key);
+    }
+
+    // 删除好友申请缓存
+    public boolean delFriendApplication(String userId1, String userId2) {
+        if(userId1 == null || userId2 == null) {
+            return false;
+        }
+        String key1 = "friend_application:" + userId1 + ":" + userId2;
+        String key2 = "friend_application:" + userId2 + ":" + userId1;
+        return del(key1)||del(key2);
+    }
+
+    // 申请添加群聊缓存
+    public boolean addGroupApplication(String applicantId, String sessionId, String createrId) {
+        if(applicantId == null || sessionId == null || createrId == null) {
+            return false;
+        }
+        String key = "group_applicant:" + applicantId + ":" + sessionId + ":" + createrId;
+        return set(key, LocalDateTime.now().format(formatterOfTime), 604800); // 缓存24h
+    }
 }

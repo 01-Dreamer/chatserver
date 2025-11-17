@@ -4,5 +4,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zxylearn.chat_session_service.pojo.entity.SessionMember;
 
 public interface SessionMemberService extends IService<SessionMember> {
-    
+    public boolean addSessionMember(SessionMember sessionMember);
 }
