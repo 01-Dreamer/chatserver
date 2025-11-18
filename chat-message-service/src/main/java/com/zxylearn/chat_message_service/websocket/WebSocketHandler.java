@@ -59,6 +59,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String userId = (String) session.getAttributes().get("userId");
         String msg = message.getPayload();
+        // 心跳检测
+        if(msg.equals("ping")) {
+            sendMessageToUser(userId, "pong");
+            return;
+        }
         redisService.pushMessageToProcessQueue(msg, userId);
     }
 
