@@ -34,10 +34,14 @@ public class AuthContorller {
 
     @PostMapping("/login")
     public UserLoginResponseDTO login(@Valid @RequestBody UserLoginRequestDTO request) {
-        UserLoginResponseDTO response = new UserLoginResponseDTO(-1L, null);
+        UserLoginResponseDTO response = new UserLoginResponseDTO();
+        response.setUserId(-1L);
         User user = userService.getUserByUsername(request.getUsername());
         if(user != null && PasswordUtil.match(request.getPassword(), user.getPasswordHash())) {
             response.setUserId(user.getId());
+            response.setUsername(user.getUsername());
+            response.setNickname(user.getNickname());
+            response.setAvatar(user.getAvatar());
             response.setToken(JwtUtil.createToken(user.getId().toString()));
         }
         return response;

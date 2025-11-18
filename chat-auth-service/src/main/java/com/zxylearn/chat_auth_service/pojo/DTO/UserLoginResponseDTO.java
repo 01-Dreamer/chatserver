@@ -9,5 +9,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class UserLoginResponseDTO {
     private Long userId;
+    private String username;
+    private String nickname;
+    private String avatar;
     private String token;
 }
