@@ -54,7 +54,7 @@ public class AuthContorller {
             User user = new User();
             user.setUsername(request.getUsername());
             user.setPasswordHash(PasswordUtil.encode(request.getPassword()));
-            user.setNickname(request.getUsername());
+            user.setNickname(request.getNickname());
             userService.addUser(user);
             response.setUserId(user.getId());
         }
