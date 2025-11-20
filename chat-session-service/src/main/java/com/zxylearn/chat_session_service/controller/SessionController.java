@@ -474,6 +474,26 @@ public class SessionController {
     }
 
     ////////////////////////////////////////
+    // 获取用户昵称
+    ////////////////////////////////////////
+    @GetMapping("getUserNickname")
+    public String getUserNickname(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("userId") Long userId) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        if (JwtUtil.getUserId(token) == null) {
+            return null;
+        }
+
+        User user = userService.getUser(userId);
+        if(user == null) {
+            return null;
+        }
+        return user.getNickname();
+    }
+
+    ////////////////////////////////////////
     // 获取群信息
     ////////////////////////////////////////
     @GetMapping("getGroupInfo")
