@@ -162,4 +162,76 @@ public class RedisService {
         String key = "group_applicant:" + applicantId + ":" + sessionId + ":" + createrId;
         return del(key);
     }
+
+    // 缓存用户头像
+    public boolean cacheUserAvatar(String userId, String avatarUrl) {
+        if(userId == null || avatarUrl == null) {
+            return false;
+        }
+        String key = "user_avatar:" + userId;
+        return set(key, avatarUrl, 604800); // 缓存7天
+    }
+
+    // 缓存用户昵称
+    public boolean cacheUserNickname(String userId, String nickname) {
+        if(userId == null || nickname == null) {
+            return false;
+        }
+        String key = "user_nickname:" + userId;
+        return set(key, nickname, 604800); // 缓存7天
+    }
+
+    // 缓存群聊头像
+    public boolean cacheSessionAvatar(String sessionId, String avatarUrl) {
+        if(sessionId == null || avatarUrl == null) {
+            return false;
+        }
+        String key = "session_avatar:" + sessionId;
+        return set(key, avatarUrl, 604800); // 缓存7天
+    }
+
+    // 缓存群聊名称
+    public boolean cacheSessionName(String sessionId, String sessionName) {
+        if(sessionId == null || sessionName == null) {
+            return false;
+        }
+        String key = "session_name:" + sessionId;
+        return set(key, sessionName, 604800); // 缓存7天
+    }
+
+    // 获取用户头像缓存
+    public String getUserAvatar(String userId) {
+        if(userId == null) {
+            return null;
+        }
+        String key = "user_avatar:" + userId;
+        return get(key);
+    }
+
+    // 获取用户昵称缓存
+    public String getUserNickname(String userId) {
+        if(userId == null) {
+            return null;
+        }
+        String key = "user_nickname:" + userId;
+        return get(key);
+    }
+
+    // 获取群聊头像缓存
+    public String getSessionAvatar(String sessionId) {
+        if(sessionId == null) {
+            return null;
+        }
+        String key = "session_avatar:" + sessionId;
+        return get(key);
+    }
+
+    // 获取群聊名称缓存
+    public String getSessionName(String sessionId) {
+        if(sessionId == null) {
+            return null;
+        }
+        String key = "session_name:" + sessionId;
+        return get(key);
+    }
 }

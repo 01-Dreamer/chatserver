@@ -5,13 +5,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zxylearn.chat_session_service.OSS.OssService;
 import com.zxylearn.chat_session_service.Utils.JwtUtil;
+import com.zxylearn.chat_session_service.config.OssConfig;
 import com.zxylearn.chat_session_service.pojo.entity.Message;
 import com.zxylearn.chat_session_service.pojo.entity.Session;
 import com.zxylearn.chat_session_service.pojo.entity.SessionMember;
@@ -49,6 +52,9 @@ public class SessionController {
 
     @Autowired
     private MessageService messageService;
+
+    @Autowired
+    private OssService ossService;
 
     ////////////////////////////////////////
     // 申请添加好友
@@ -330,5 +336,183 @@ public class SessionController {
         }
 
         return true;
+    }
+
+    ////////////////////////////////////////
+    // 修改用户昵称
+    ////////////////////////////////////////
+    @PostMapping("updateUserNickname")
+    public boolean updateUserNickname(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("nickname") String nickname) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return false;
+        }
+
+        // 缓存昵称
+        redisService.cacheUserNickname(userId.toString(), nickname);
+
+        userService.updateUserNickname(userId, nickname);
+        return true;
+    }
+
+    ////////////////////////////////////////
+    // 修改用户头像
+    ////////////////////////////////////////
+    @PostMapping("updateUserAvatar")
+    public boolean updateUserAvatar(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("sessionId") String avatarUrl) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return false;
+        }
+
+        // 缓存头像
+        redisService.cacheUserAvatar(userId.toString(), avatarUrl);
+
+        String oldAvatar = userService.updateUserAvatar(userId, avatarUrl);
+        if (oldAvatar != null) {
+            ossService.deleteFile(oldAvatar);
+        }
+
+        return true;
+    }
+
+    ////////////////////////////////////////
+    // 修改群昵称
+    ////////////////////////////////////////
+    @PostMapping("updateGroupName")
+    public boolean updateGroupName(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("sessionId") Long sessionId,
+            @RequestParam("name") String name) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return false;
+        }
+
+        // 检查用户是否为群主
+        Session session = sessionService.getSession(sessionId);
+        if (session == null || !session.getCreaterId().equals(userId)) {
+            return false;
+        }
+
+        // 缓存群聊名称
+        redisService.cacheSessionName(sessionId.toString(), name);
+
+        sessionService.updateSessionName(sessionId, name);
+        return true;
+    }
+
+    ////////////////////////////////////////
+    // 修改群头像
+    ////////////////////////////////////////
+    @PostMapping("updateGroupAvatar")
+    public boolean updateGroupAvatar(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("sessionId") Long sessionId,
+            @RequestParam("avatarUrl") String avatarUrl) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return false;
+        }
+
+        // 检查用户是否为群主
+        Session session = sessionService.getSession(sessionId);
+        if (session == null || !session.getCreaterId().equals(userId)) {
+            return false;
+        }
+
+        // 缓存群聊头像
+        redisService.cacheSessionAvatar(sessionId.toString(), avatarUrl);
+
+        String oldAvatar = sessionService.updateSessionAvatar(sessionId, avatarUrl);
+        if (oldAvatar != null) {
+            ossService.deleteFile(oldAvatar);
+        }
+        return true;
+    }
+
+    ////////////////////////////////////////
+    // 获取用户信息
+    ////////////////////////////////////////
+    @GetMapping("getUserInfo")
+    public String getUserInfo(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("userId") Long userId) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        if (JwtUtil.getUserId(token) == null) {
+            return null;
+        }
+
+        return getUserInfoFromCache(userId);
+    }
+
+    ////////////////////////////////////////
+    // 获取群信息
+    ////////////////////////////////////////
+    @GetMapping("getGroupInfo")
+    public String getGroupInfo(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam("sessionId") Long sessionId) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        if (JwtUtil.getUserId(token) == null) {
+            return null;
+        }
+
+        return getGroupInfoFromCache(sessionId);
+    }
+
+
+    private String getUserInfoFromCache(Long userId) {
+        String nickname = redisService.getUserNickname(userId.toString());
+        String avatar = redisService.getUserAvatar(userId.toString());
+        if(nickname == null || avatar == null) {
+            User user = userService.getUser(userId);
+            if(user == null) {
+                return null;
+            }
+            if(nickname == null) {
+                nickname = user.getNickname() == null ? "null" : user.getNickname();
+                redisService.cacheUserNickname(userId.toString(), nickname);
+            }
+            if(avatar == null) {
+                avatar = user.getAvatar() == null ? "null" : user.getAvatar();
+                redisService.cacheUserAvatar(userId.toString(), avatar);
+            }
+        }
+        return "{\"userId\":\"" + userId + "\",\"nickname\":\"" + nickname + "\",\"avatar\":\"" + avatar + "\"}";
+    }
+
+    private String getGroupInfoFromCache(Long sessionId) {
+        String name = redisService.getSessionName(sessionId.toString());
+        String avatar = redisService.getSessionAvatar(sessionId.toString());
+        if(name == null || avatar == null) {
+            Session session = sessionService.getSession(sessionId);
+            if(session == null || !session.getPeerId().equals(-1L)) {
+                return null;
+            }
+            if(name == null) {
+                name = session.getName() == null ? "null" : session.getName();
+                redisService.cacheSessionName(sessionId.toString(), name);
+            }
+            if(avatar == null) {
+                avatar = session.getAvatar() == null ? "null" : session.getAvatar();
+                redisService.cacheSessionAvatar(sessionId.toString(), avatar);
+            }
+        }
+        return "{\"sessionId\":\"" + sessionId + "\",\"name\":\"" + name + "\",\"avatar\":\"" + avatar + "\"}";
     }
 }

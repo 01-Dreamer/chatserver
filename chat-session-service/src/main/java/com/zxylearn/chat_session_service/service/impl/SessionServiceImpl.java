@@ -37,4 +37,26 @@ public class SessionServiceImpl extends ServiceImpl<SessionMapper, Session> impl
         }
         return baseMapper.insert(session) > 0;
     }
+
+    @Override
+    public boolean updateSessionName(Long sessionId, String newName) {
+        Session session = baseMapper.selectById(sessionId);
+        if (session == null) {
+            return false;
+        }
+        session.setName(newName);
+        return baseMapper.updateById(session) > 0;
+    }
+
+    @Override
+    public String updateSessionAvatar(Long sessionId, String newAvatarUrl) {
+        Session session = baseMapper.selectById(sessionId);
+        if (session == null) {
+            return null;
+        }
+        String oldAvatarUrl = session.getAvatar();
+        session.setAvatar(newAvatarUrl);
+        baseMapper.updateById(session);
+        return oldAvatarUrl;
+    }
 }

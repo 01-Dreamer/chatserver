@@ -21,4 +21,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public User getUser(Long userId) {
         return baseMapper.selectById(userId);
     }
+
+    @Override
+    public boolean updateUserNickname(Long userId, String newNickname) {
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            return false;
+        }
+        user.setNickname(newNickname);
+        return baseMapper.updateById(user) > 0;
+    }
+
+    @Override
+    public String updateUserAvatar(Long userId, String newAvatar) {
+        User user = baseMapper.selectById(userId);
+        if (user == null) {
+            return null;
+        }
+        String oldAvatar = user.getAvatar();
+        user.setAvatar(newAvatar);
+        baseMapper.updateById(user);
+        return oldAvatar;
+    }
 }
