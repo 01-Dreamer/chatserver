@@ -7,4 +7,5 @@ public interface UserService extends IService<User> {
     boolean isUserExists(Long userId);
     boolean increaseBalance(Long userId, Long amount);
     boolean descreaseBalance(Long userId, Long amount);
+    Long getBalance(Long userId);
 }

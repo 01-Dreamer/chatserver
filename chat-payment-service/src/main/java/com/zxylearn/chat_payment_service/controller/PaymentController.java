@@ -177,4 +177,17 @@ public class PaymentController {
 
         return true;
     }
+
+    @GetMapping("getBalance")
+    public Long getBalance(
+            @RequestHeader("Authorization") String authorizationHeader) throws Exception {
+ 
+        String token = authorizationHeader.replace("Bearer ", "");
+        Long userId = JwtUtil.getUserId(token);
+        if (userId == null) {
+            return null;
+        }
+
+        return userService.getBalance(userId);
+    }
 }

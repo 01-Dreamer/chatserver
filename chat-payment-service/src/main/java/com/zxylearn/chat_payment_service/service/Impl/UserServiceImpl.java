@@ -36,4 +36,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         updateWrapper.setSql("balance = balance - " + amount);
         return baseMapper.update(null, updateWrapper) > 0;
     }
+
+    @Override
+    public Long getBalance(Long userId) {
+        User user = baseMapper.selectById(userId);
+        if(user == null) {
+            return null;
+        }
+        return user.getBalance();
+    }
 }
