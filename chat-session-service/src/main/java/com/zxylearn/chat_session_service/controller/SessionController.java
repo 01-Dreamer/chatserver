@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zxylearn.chat_session_service.OSS.OssService;
 import com.zxylearn.chat_session_service.Utils.JwtUtil;
-import com.zxylearn.chat_session_service.config.OssConfig;
 import com.zxylearn.chat_session_service.pojo.entity.Message;
 import com.zxylearn.chat_session_service.pojo.entity.Session;
 import com.zxylearn.chat_session_service.pojo.entity.SessionMember;
