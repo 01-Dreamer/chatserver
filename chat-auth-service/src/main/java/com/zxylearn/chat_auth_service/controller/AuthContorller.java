@@ -2,6 +2,7 @@ package com.zxylearn.chat_auth_service.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.zxylearn.chat_auth_service.OSS.OssService;
 import com.zxylearn.chat_auth_service.Utils.JwtUtil;
 import com.zxylearn.chat_auth_service.Utils.PasswordUtil;
 import com.zxylearn.chat_auth_service.pojo.DTO.UserLoginRequestDTO;
@@ -32,6 +33,9 @@ public class AuthContorller {
     @Autowired
     private RedisService redisService;
 
+    @Autowired
+    private OssService ossService;
+
     @PostMapping("/login")
     public UserLoginResponseDTO login(@Valid @RequestBody UserLoginRequestDTO request) {
         UserLoginResponseDTO response = new UserLoginResponseDTO();
@@ -57,6 +61,7 @@ public class AuthContorller {
             user.setNickname(request.getNickname());
             userService.addUser(user);
             response.setUserId(user.getId());
+            ossService.createAvatar(user.getId());
         }
         return response;
     }

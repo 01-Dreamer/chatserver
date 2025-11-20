@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zxylearn.chat_session_service.OSS.OssService;
@@ -358,29 +359,43 @@ public class SessionController {
         return true;
     }
 
-    ////////////////////////////////////////
-    // 修改用户头像
-    ////////////////////////////////////////
-    @PostMapping("updateUserAvatar")
+    // ////////////////////////////////////////
+    // // 修改用户头像
+    // ////////////////////////////////////////
+    // @PostMapping("updateUserAvatar")
+    // public boolean updateUserAvatar(
+    //         @RequestHeader("Authorization") String authorizationHeader,
+    //         @RequestParam("avatarUrl") String avatarUrl) {
+
+    //     String token = authorizationHeader.replace("Bearer ", "");
+    //     Long userId = JwtUtil.getUserId(token);
+    //     if (userId == null) {
+    //         return false;
+    //     }
+
+    //     // 缓存头像
+    //     redisService.cacheUserAvatar(userId.toString(), avatarUrl);
+
+    //     String oldAvatar = userService.updateUserAvatar(userId, avatarUrl);
+    //     if (oldAvatar != null) {
+    //         ossService.deleteFile(oldAvatar);
+    //     }
+
+    //     return true;
+    // }
+
+    @PostMapping("/updateUserAvatar")
     public boolean updateUserAvatar(
-            @RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam("sessionId") String avatarUrl) {
+        @RequestHeader("Authorization") String authorizationHeader,
+        @RequestParam("file") MultipartFile file) {
 
         String token = authorizationHeader.replace("Bearer ", "");
         Long userId = JwtUtil.getUserId(token);
         if (userId == null) {
             return false;
         }
-
-        // 缓存头像
-        redisService.cacheUserAvatar(userId.toString(), avatarUrl);
-
-        String oldAvatar = userService.updateUserAvatar(userId, avatarUrl);
-        if (oldAvatar != null) {
-            ossService.deleteFile(oldAvatar);
-        }
-
-        return true;
+        
+        return ossService.uploadFile(file, userId);
     }
 
     ////////////////////////////////////////

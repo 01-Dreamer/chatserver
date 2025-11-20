@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import com.aliyun.oss.OSS;
 
-import cn.hutool.core.lang.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,16 +27,15 @@ public class OssService {
     @Value("${aliyun.oss.endpoint}")
     private String endpoint;
 
-    public String uploadFile(MultipartFile file) {
+    public boolean uploadFile(MultipartFile file, Long userId) {
         try {
-            String uuid = UUID.randomUUID().toString().replace("-", "");
-            String objectName = "chat/" + uuid + "_" + file.getOriginalFilename();
+            String objectName = "chat/UserAvatar_" + userId.toString() + ".png";
             InputStream inputStream = file.getInputStream();
             ossClient.putObject(bucketName, objectName, inputStream);
-            return "https://" + bucketName + "." + endpoint + "/" + objectName;
+            return true;
         } catch (Exception e) {
             log.error("failed to upload file: {}", e.getMessage());
-            return null;
+            return false;
         }
     }
 
