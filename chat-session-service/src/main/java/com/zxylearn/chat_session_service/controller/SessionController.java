@@ -75,7 +75,8 @@ public class SessionController {
         }
 
         // 判断用户是否存在
-        if (!userService.isUserExist(friendId)) {
+        User user = userService.getUser(userId);
+        if(user == null) {
             return false;
         }
 
@@ -90,6 +91,8 @@ public class SessionController {
         // 向被申请者发送消息
         Map<String, String> content = new HashMap();
         content.put("applicantId", userId.toString());
+        content.put("applicantNickName", user.getNickname());
+        content.put("applicantAvatar", user.getAvatar());
         String processedContent = objectMapper.writeValueAsString(content);
 
         Message message = new Message();
@@ -205,15 +208,16 @@ public class SessionController {
         String token = authorizationHeader.replace("Bearer ", "");
         Long userId = JwtUtil.getUserId(token);
         if (userId == null) {
-            return null;
+            return -1L;
         }
 
         // 创建群聊
         Session session = new Session();
         session.setCreaterId(userId);
         session.setPeerId(-1L);
+        session.setName(name);
         if (!sessionService.addSession(session)) {
-            return null;
+            return -1L;
         }
 
         // 将用户加入群聊
@@ -240,6 +244,11 @@ public class SessionController {
             return false;
         }
 
+        User user = userService.getUser(userId);
+        if(user == null) {
+            return false;
+        }
+
         // 检查群聊是否存在
         Session session = sessionService.getSession(sessionId);
         if (session == null || !session.getPeerId().equals(-1L)) {
@@ -258,7 +267,10 @@ public class SessionController {
         // 向群主发送消息
         Map<String, String> content = new HashMap();
         content.put("applicantId", userId.toString());
+        content.put("applicantNickName", user.getNickname());
+        content.put("applicantAvatar", user.getAvatar());
         content.put("sessionId", sessionId.toString());
+        content.put("sessionName", session.getName());
         String processedContent = objectMapper.writeValueAsString(content);
 
         Message message = new Message();

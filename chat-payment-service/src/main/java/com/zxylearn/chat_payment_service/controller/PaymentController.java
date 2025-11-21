@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zxylearn.chat_payment_service.Utils.JwtUtil;
 import com.zxylearn.chat_payment_service.hutool.IdGeneratorService;
 import com.zxylearn.chat_payment_service.pojo.entity.Message;
+import com.zxylearn.chat_payment_service.pojo.entity.User;
 import com.zxylearn.chat_payment_service.redis.RedisService;
 import com.zxylearn.chat_payment_service.service.MessageService;
 import com.zxylearn.chat_payment_service.service.UserService;
@@ -54,6 +55,11 @@ public class PaymentController {
             return false;
         }
 
+        User payer = userService.getUserById(payerId);
+        if(payer == null) {
+            return false;
+        }
+
         // 扣款
         if(!userService.descreaseBalance(payerId, amount)) {
             return false;
@@ -62,9 +68,10 @@ public class PaymentController {
         // 收款
         userService.increaseBalance(userId, amount);
 
-        // 发送红包通知
+        // 发送红包通知给接收者
         Map<String, String> content = new HashMap();
         content.put("payerId", payerId.toString());
+        content.put("payerNickName", payer.getNickname());
         content.put("receiverId", userId.toString());
         content.put("amount", amount.toString());
         String processedContent = objectMapper.writeValueAsString(content);
@@ -78,11 +85,11 @@ public class PaymentController {
         message.setContent(processedContent);
         messageService.save(message);
         String processedMessage = objectMapper.writeValueAsString(message);
-        if (redisService.isUserOnline(payerId.toString())) {
-            redisService.publish(payerId.toString(), processedMessage);
-        } else {
-            redisService.addUnreadMessage(payerId.toString(), message.getId().toString());
-        }
+        // if (redisService.isUserOnline(payerId.toString())) {
+        //     redisService.publish(payerId.toString(), processedMessage);
+        // } else {
+        //     redisService.addUnreadMessage(payerId.toString(), message.getId().toString());
+        // }
         if (redisService.isUserOnline(userId.toString())) {
             redisService.publish(userId.toString(), processedMessage);
         } else {
@@ -148,9 +155,11 @@ public class PaymentController {
         String amount = redPacket.substring(seqPos + 1);
         userService.increaseBalance(userId, Long.parseLong(amount));
 
-        // 发送红包通知
+        // 发送红包通知给接收者
+        User payer = userService.getUserById(Long.parseLong(payerId));
         Map<String, String> content = new HashMap();
         content.put("payerId", payerId.toString());
+        content.put("payerNickName", payer.getNickname());
         content.put("receiverId", userId.toString());
         content.put("amount", amount.toString());
         String processedContent = objectMapper.writeValueAsString(content);
@@ -164,11 +173,11 @@ public class PaymentController {
         message.setContent(processedContent);
         messageService.save(message);
         String processedMessage = objectMapper.writeValueAsString(message);
-        if (redisService.isUserOnline(payerId.toString())) {
-            redisService.publish(payerId.toString(), processedMessage);
-        } else {
-            redisService.addUnreadMessage(payerId.toString(), message.getId().toString());
-        }
+        // if (redisService.isUserOnline(payerId.toString())) {
+        //     redisService.publish(payerId.toString(), processedMessage);
+        // } else {
+        //     redisService.addUnreadMessage(payerId.toString(), message.getId().toString());
+        // }
         if (redisService.isUserOnline(userId.toString())) {
             redisService.publish(userId.toString(), processedMessage);
         } else {

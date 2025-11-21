@@ -45,4 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         return user.getBalance();
     }
+
+    @Override
+    public User getUserById(Long userId) {
+        return baseMapper.selectById(userId);
+    }
 }
