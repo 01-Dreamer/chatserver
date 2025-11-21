@@ -58,8 +58,8 @@ public class RedisKeyExpirationListener extends KeyExpirationEventMessageListene
             // 发送红包退款通知
             try {
                 Map<String, String> content = new HashMap();
-                content.put("payerId", userId.toString());
-                content.put("receiverId", userId.toString());
+                content.put("payerId", "-1");
+                content.put("receiverId", "-1");
                 content.put("amount", amount.toString());
                 String processedContent = objectMapper.writeValueAsString(content);
 
