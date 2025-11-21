@@ -82,4 +82,12 @@ public class RedisService {
         del(key);
         return value;
     }
+    
+    // 用户在线状态
+    public boolean isUserOnline(String userId) {
+        if (userId == null) {
+            return false;
+        }
+        return get("online:" + userId) != null;
+    }
 }

@@ -42,6 +42,11 @@ public class AuthContorller {
         response.setUserId(-1L);
         User user = userService.getUserByUsername(request.getUsername());
         if(user != null && PasswordUtil.match(request.getPassword(), user.getPasswordHash())) {
+
+            if(redisService.isUserOnline(user.getId().toString())) {
+                response.setUserId(-2L);
+                return response;
+            }
             response.setUserId(user.getId());
             response.setUsername(user.getUsername());
             response.setNickname(user.getNickname());

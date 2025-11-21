@@ -75,7 +75,7 @@ public class SessionController {
         }
 
         // 判断用户是否存在
-        User user = userService.getUser(userId);
+        User user = userService.getUser(friendId);
         if(user == null) {
             return false;
         }
@@ -91,7 +91,7 @@ public class SessionController {
         // 向被申请者发送消息
         Map<String, String> content = new HashMap();
         content.put("applicantId", userId.toString());
-        content.put("applicantNickName", user.getNickname());
+        content.put("applicantNickname", user.getNickname());
         content.put("applicantAvatar", user.getAvatar());
         String processedContent = objectMapper.writeValueAsString(content);
 
@@ -167,10 +167,10 @@ public class SessionController {
         Map<String, String> content = new HashMap();
         content.put("sessionId", session.getId().toString());
         content.put("applicantId", applicant.getId().toString());
-        content.put("applicantNickName", applicant.getNickname());
+        content.put("applicantNickname", applicant.getNickname());
         content.put("applicantAvatar", applicant.getAvatar());
         content.put("requesterId", requester.getId().toString());
-        content.put("requesterNickName", requester.getNickname());
+        content.put("requesterNickname", requester.getNickname());
         content.put("requesterAvatar", requester.getAvatar());
         String processedContent = objectMapper.writeValueAsString(content);
 
@@ -267,7 +267,7 @@ public class SessionController {
         // 向群主发送消息
         Map<String, String> content = new HashMap();
         content.put("applicantId", userId.toString());
-        content.put("applicantNickName", user.getNickname());
+        content.put("applicantNickname", user.getNickname());
         content.put("applicantAvatar", user.getAvatar());
         content.put("sessionId", sessionId.toString());
         content.put("sessionName", session.getName());
