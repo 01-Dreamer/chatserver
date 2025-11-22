@@ -112,7 +112,8 @@ public class RedisService {
         }
         String key1 = "red_packet:" + redPacketId;
         String key2 = "red_packet_owner:" + redPacketId;
-        String value = stringRedisTemplate.opsForValue().getAndDelete(key1);
+        String value = get(key1);
+        del(key1);
         del(key2);
         return value;
     }
